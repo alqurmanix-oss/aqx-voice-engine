@@ -32,7 +32,7 @@ def get_stt_adapter():
         try:
             from aqx_voice.adapters.faster_whisper_stt import FasterWhisperSTT
             _stt_instance = FasterWhisperSTT()
-        except (ImportError, FileNotFoundError, OSError) as exc:
+        except Exception as exc:
             logging.getLogger("aqx.voice").exception("Unable to initialize local STT")
             raise HTTPException(status_code=503, detail=f"Local STT is not ready: {exc}") from exc
     return _stt_instance
@@ -47,7 +47,7 @@ def get_tts_adapter():
         try:
             from aqx_voice.adapters.chatterbox_tts import ChatterboxMultilingualTTS
             _tts_instance = ChatterboxMultilingualTTS()
-        except (ImportError, FileNotFoundError, OSError, RuntimeError) as exc:
+        except Exception as exc:
             logging.getLogger("aqx.voice").exception("Unable to initialize local TTS")
             raise HTTPException(status_code=503, detail=f"Local TTS is not ready: {exc}") from exc
     return _tts_instance
@@ -82,7 +82,7 @@ def capabilities():
             "adapter": settings.stt_adapter,
             "local_model_present": stt_dir.is_dir(),
             "model_path": str(stt_dir),
-            "language_detection": True,
+            "language_detection": settings.stt_adapter == "faster-whisper",
         },
         "models": registry.get("models", []),
         "note": "Only locally validated models count as verified language support."
@@ -117,7 +117,7 @@ async def stt(file: UploadFile = File(...), language: str | None = None):
     if len(data) > settings.max_upload_mb * 1024 * 1024:
         raise HTTPException(status_code=413, detail="Audio file exceeds configured limit")
 
-    adapter = get_stt_adapter()
+    adapter = await run_in_threadpool(get_stt_adapter)
     temp_path = None
     try:
         with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as temp_file:
