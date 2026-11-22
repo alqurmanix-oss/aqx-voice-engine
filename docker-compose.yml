@@ -1,0 +1,18 @@
+services:
+  voice-api:
+    build: .
+    container_name: aqx-voice-engine
+    env_file: [.env]
+    ports: ["127.0.0.1:8080:8080"]
+    volumes:
+      - model-data:/models
+      - voice-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+volumes:
+  model-data:
+  voice-data:
