@@ -12,11 +12,14 @@ AQX_EXTRAS=stt-whisper
 
 Then rebuild with `docker compose up --build`. For local development, install with `pip install -e '.[stt-whisper]'`.
 
-Provision the selected Whisper checkpoint on an operator-controlled machine, then copy the complete CTranslate2 model directory into the server model volume:
+Provision a pinned checkpoint on an operator-controlled machine. The selected upstream checkpoint is `Systran/faster-whisper-large-v3` (CTranslate2 format, MIT license, 100 languages declared by its model card). Review the model card and license at https://huggingface.co/Systran/faster-whisper-large-v3, then provision an immutable commit SHA:
 
+```bash
+pip install huggingface_hub
+python scripts/provision_whisper.py --revision <immutable-commit-sha> --destination /models/whisper-large-v3
 ```
-/models/whisper-large-v3/
-```
+
+Copy the resulting directory into the server's persistent model volume at `/models/whisper-large-v3/`.
 
 The directory must contain the CTranslate2 model files and tokenizer assets expected by faster-whisper. Do not set `STT_MODEL_PATH` to a hosted model ID: the adapter accepts a local directory only and does not download weights during requests.
 
