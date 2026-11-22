@@ -35,3 +35,14 @@ def test_stt_rejects_unsupported_extension():
         files={"file": ("payload.exe", b"not-audio", "application/octet-stream")},
     )
     assert response.status_code == 415
+
+def test_voice_catalog_requires_auth():
+    assert client.get("/v1/voices").status_code == 401
+
+def test_voice_catalog_returns_safe_ids():
+    response = client.get("/v1/voices", headers=AUTH)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["default_voice_available"] is True
+    assert isinstance(body["custom_voice_ids"], list)
+    assert body["consent_required"] is True
