@@ -1,6 +1,9 @@
 services:
   voice-api:
-    build: .
+    build:
+      context: .
+      args:
+        AQX_EXTRAS: ${AQX_EXTRAS:-}
     container_name: aqx-voice-engine
     env_file: [.env]
     environment:
