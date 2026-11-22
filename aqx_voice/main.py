@@ -95,6 +95,19 @@ def capabilities():
         "note": "Only locally validated models count as verified language support."
     }
 
+@app.get("/v1/voices", dependencies=[Depends(require_api_key)])
+def voices():
+    voice_dir = Path(settings.tts_voice_dir)
+    custom_voices = sorted(
+        path.stem for path in voice_dir.glob("*.wav") if path.is_file()
+    ) if voice_dir.is_dir() else []
+    return {
+        "default_voice_available": True,
+        "custom_voice_ids": custom_voices,
+        "voice_prompt_format": "WAV",
+        "consent_required": True,
+    }
+
 @app.post("/v1/tts", dependencies=[Depends(require_api_key)])
 def tts(request: SpeakRequest):
     if len(request.text) > settings.max_text_chars:
