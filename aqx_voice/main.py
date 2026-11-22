@@ -4,6 +4,7 @@ import tempfile
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
+from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 
 from aqx_voice.config import settings
@@ -91,7 +92,7 @@ async def stt(file: UploadFile = File(...), language: str | None = None):
         with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as temp_file:
             temp_file.write(data)
             temp_path = temp_file.name
-        result = adapter.transcribe(temp_path, language=language)
+        result = await run_in_threadpool(adapter.transcribe, temp_path, language)
         return {
             "text": result.text,
             "language": result.language,
