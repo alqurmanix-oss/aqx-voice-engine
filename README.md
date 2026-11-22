@@ -15,6 +15,7 @@ Self-hosted, privacy-first speech platform for AQX. Runtime inference is designe
 ```bash
 cp .env.example .env
 # Set AQX_API_KEY to a long random value
+# Set AQX_EXTRAS=stt-whisper,tts-chatterbox to include both optional runtimes in the image
 docker compose up --build
 ```
 
