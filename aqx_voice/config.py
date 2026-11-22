@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     stt_device: str = "cpu"
     stt_compute_type: str = "int8"
     tts_adapter: str = "none"
+    tts_device: str = "cpu"
+    tts_voice_dir: str = "/models/voices"
     log_level: str = "INFO"
 
 settings = Settings()
