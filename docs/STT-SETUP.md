@@ -4,11 +4,13 @@ The local adapter is implemented, but inference remains disabled by default.
 
 ## Provision a local model
 
-Install the optional runtime:
+Enable the optional runtime in the container build by setting this in `.env`:
 
-```bash
-pip install '.[stt-whisper]'
+```dotenv
+AQX_EXTRAS=stt-whisper
 ```
+
+Then rebuild with `docker compose up --build`. For local development, install with `pip install -e '.[stt-whisper]'`.
 
 Provision the selected Whisper checkpoint on an operator-controlled machine, then copy the complete CTranslate2 model directory into the server model volume:
 
