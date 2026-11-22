@@ -4,15 +4,17 @@ import tempfile
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
-from starlette.concurrency import run_in_threadpool
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 
 from aqx_voice.config import settings
 from aqx_voice.registry import load_registry
 
 logging.basicConfig(level=settings.log_level)
-app = FastAPI(title="AQX Voice Engine", version="0.2.0")
+app = FastAPI(title="AQX Voice Engine", version="0.3.0")
 _stt_instance = None
+_tts_instance = None
 
 def require_api_key(x_aqx_api_key: str | None = Header(default=None)):
     if settings.aqx_env == "production" and settings.aqx_api_key == "change-me":
@@ -35,6 +37,21 @@ def get_stt_adapter():
             raise HTTPException(status_code=503, detail=f"Local STT is not ready: {exc}") from exc
     return _stt_instance
 
+def get_tts_adapter():
+    global _tts_instance
+    if settings.tts_adapter == "none":
+        raise HTTPException(status_code=503, detail="Local TTS adapter is disabled")
+    if settings.tts_adapter != "chatterbox":
+        raise HTTPException(status_code=503, detail="Unknown local TTS adapter")
+    if _tts_instance is None:
+        try:
+            from aqx_voice.adapters.chatterbox_tts import ChatterboxMultilingualTTS
+            _tts_instance = ChatterboxMultilingualTTS()
+        except (ImportError, FileNotFoundError, OSError, RuntimeError) as exc:
+            logging.getLogger("aqx.voice").exception("Unable to initialize local TTS")
+            raise HTTPException(status_code=503, detail=f"Local TTS is not ready: {exc}") from exc
+    return _tts_instance
+
 class SpeakRequest(BaseModel):
     text: str = Field(min_length=1)
     language: str = Field(min_length=2, max_length=35)
@@ -53,14 +70,18 @@ def health():
 @app.get("/v1/capabilities", dependencies=[Depends(require_api_key)])
 def capabilities():
     registry = load_registry()
-    model_dir = Path(settings.stt_model_path)
+    stt_dir = Path(settings.stt_model_path)
     return {
-        "tts": {"configured": settings.tts_adapter != "none", "adapter": settings.tts_adapter},
+        "tts": {
+            "configured": settings.tts_adapter != "none",
+            "adapter": settings.tts_adapter,
+            "voice_dir": settings.tts_voice_dir,
+        },
         "stt": {
             "configured": settings.stt_adapter != "none",
             "adapter": settings.stt_adapter,
-            "local_model_present": model_dir.is_dir(),
-            "model_path": str(model_dir),
+            "local_model_present": stt_dir.is_dir(),
+            "model_path": str(stt_dir),
             "language_detection": True,
         },
         "models": registry.get("models", []),
@@ -71,7 +92,17 @@ def capabilities():
 def tts(request: SpeakRequest):
     if len(request.text) > settings.max_text_chars:
         raise HTTPException(status_code=413, detail="Text exceeds configured limit")
-    raise HTTPException(status_code=503, detail="No local TTS adapter is installed and validated")
+    adapter = get_tts_adapter()
+    try:
+        audio = adapter.synthesize(request.text, request.language, request.voice)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        logging.getLogger("aqx.voice").exception("Local TTS inference failed")
+        raise HTTPException(status_code=500, detail="Local TTS inference failed") from exc
+    return Response(content=audio, media_type="audio/wav", headers={
+        "Content-Disposition": 'attachment; filename="aqx-speech.wav"'
+    })
 
 @app.post("/v1/stt", dependencies=[Depends(require_api_key)])
 async def stt(file: UploadFile = File(...), language: str | None = None):
