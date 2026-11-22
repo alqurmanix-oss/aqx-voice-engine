@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     max_upload_mb: int = 25
     max_text_chars: int = 5000
     stt_adapter: str = "none"
+    stt_model_path: str = "/models/whisper-large-v3"
+    stt_device: str = "cpu"
+    stt_compute_type: str = "int8"
     tts_adapter: str = "none"
     log_level: str = "INFO"
 
