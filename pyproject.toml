@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aqx-voice-engine"
-version = "0.2.0"
+version = "0.3.0"
 description = "Self-hosted, privacy-first multilingual speech API for AQX"
 requires-python = ">=3.11"
 dependencies = ["fastapi>=0.115,<1", "uvicorn[standard]>=0.30,<1", "pydantic-settings>=2.4,<3", "python-multipart>=0.0.9"]
@@ -12,6 +12,7 @@ dependencies = ["fastapi>=0.115,<1", "uvicorn[standard]>=0.30,<1", "pydantic-set
 [project.optional-dependencies]
 dev = ["pytest>=8", "httpx>=0.27", "ruff>=0.6"]
 stt-whisper = ["faster-whisper>=1.0"]
+tts-chatterbox = ["chatterbox-tts", "soundfile>=0.12"]
 
 [tool.setuptools.packages.find]
 include = ["aqx_voice*"]
