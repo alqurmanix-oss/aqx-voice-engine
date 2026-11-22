@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "policy": "Candidate records are not verified support. Review upstream license and validate locally before enabling.",
+  "models": [
+    {
+      "id": "whisper-large-v3",
+      "task": "stt",
+      "status": "candidate",
+      "runtime": "faster-whisper",
+      "languages": "Multilingual; exact coverage must be confirmed against the upstream model card",
+      "language_detection": true,
+      "license_review": "required",
+      "weights_location": "/models/whisper-large-v3",
+      "validation": "not-tested"
+    },
+    {
+      "id": "tts-model-pending-selection",
+      "task": "tts",
+      "status": "unselected",
+      "runtime": null,
+      "languages": [],
+      "language_detection": false,
+      "license_review": "required",
+      "weights_location": "/models/tts",
+      "validation": "not-tested"
+    }
+  ]
+}
