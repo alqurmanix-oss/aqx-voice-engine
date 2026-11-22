@@ -12,11 +12,13 @@ Choose an immutable commit SHA from the model repository. Do not provision from 
 
 ## 2. Provision weights
 
-Install the TTS extra and its platform-compatible PyTorch/torchaudio build on a provisioning machine:
+Enable the optional runtime in the container build by setting this in `.env`:
 
-```bash
-pip install -e '.[tts-chatterbox]'
+```dotenv
+AQX_EXTRAS=tts-chatterbox
 ```
+
+Then rebuild with `docker compose up --build`. For local development, install `pip install -e '.[tts-chatterbox]'` plus a platform-compatible PyTorch/torchaudio build. If both speech tasks are required, set `AQX_EXTRAS=stt-whisper,tts-chatterbox`.
 
 Set `HF_HOME` to the persistent model volume, then provision the pinned revision:
 
