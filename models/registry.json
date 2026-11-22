@@ -14,14 +14,16 @@
       "validation": "not-tested"
     },
     {
-      "id": "tts-model-pending-selection",
+      "id": "ResembleAI/chatterbox",
+      "revision": "V3 multilingual checkpoint; pin an immutable revision during provisioning",
       "task": "tts",
-      "status": "unselected",
-      "runtime": null,
-      "languages": [],
+      "status": "candidate",
+      "runtime": "chatterbox-tts",
+      "license": "MIT (verify the exact model card and package revision at provisioning)",
+      "languages": ["ar", "da", "de", "el", "en", "es", "fi", "fr", "he", "hi", "it", "ja", "ko", "ms", "nl", "no", "pl", "pt", "ru", "sv", "sw", "tr", "zh"],
       "language_detection": false,
-      "license_review": "required",
-      "weights_location": "/models/tts",
+      "arabic_dialect_support": "Not established; Arabic is listed, but Egyptian dialect quality requires separate testing",
+      "weights_location": "Hugging Face cache mounted under /models",
       "validation": "not-tested"
     }
   ]
