@@ -1,6 +1,7 @@
 import hmac
 import logging
 import tempfile
+import threading
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
@@ -15,6 +16,8 @@ logging.basicConfig(level=settings.log_level)
 app = FastAPI(title="AQX Voice Engine", version="0.3.0")
 _stt_instance = None
 _tts_instance = None
+_stt_init_lock = threading.Lock()
+_tts_init_lock = threading.Lock()
 
 def require_api_key(x_aqx_api_key: str | None = Header(default=None)):
     if settings.aqx_env == "production" and settings.aqx_api_key == "change-me":
@@ -29,12 +32,14 @@ def get_stt_adapter():
     if settings.stt_adapter != "faster-whisper":
         raise HTTPException(status_code=503, detail="Unknown local STT adapter")
     if _stt_instance is None:
-        try:
-            from aqx_voice.adapters.faster_whisper_stt import FasterWhisperSTT
-            _stt_instance = FasterWhisperSTT()
-        except Exception as exc:
-            logging.getLogger("aqx.voice").exception("Unable to initialize local STT")
-            raise HTTPException(status_code=503, detail=f"Local STT is not ready: {exc}") from exc
+        with _stt_init_lock:
+            if _stt_instance is None:
+                try:
+                    from aqx_voice.adapters.faster_whisper_stt import FasterWhisperSTT
+                    _stt_instance = FasterWhisperSTT()
+                except Exception as exc:
+                    logging.getLogger("aqx.voice").exception("Unable to initialize local STT")
+                    raise HTTPException(status_code=503, detail=f"Local STT is not ready: {exc}") from exc
     return _stt_instance
 
 def get_tts_adapter():
@@ -44,12 +49,14 @@ def get_tts_adapter():
     if settings.tts_adapter != "chatterbox":
         raise HTTPException(status_code=503, detail="Unknown local TTS adapter")
     if _tts_instance is None:
-        try:
-            from aqx_voice.adapters.chatterbox_tts import ChatterboxMultilingualTTS
-            _tts_instance = ChatterboxMultilingualTTS()
-        except Exception as exc:
-            logging.getLogger("aqx.voice").exception("Unable to initialize local TTS")
-            raise HTTPException(status_code=503, detail=f"Local TTS is not ready: {exc}") from exc
+        with _tts_init_lock:
+            if _tts_instance is None:
+                try:
+                    from aqx_voice.adapters.chatterbox_tts import ChatterboxMultilingualTTS
+                    _tts_instance = ChatterboxMultilingualTTS()
+                except Exception as exc:
+                    logging.getLogger("aqx.voice").exception("Unable to initialize local TTS")
+                    raise HTTPException(status_code=503, detail=f"Local TTS is not ready: {exc}") from exc
     return _tts_instance
 
 class SpeakRequest(BaseModel):
