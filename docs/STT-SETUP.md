@@ -1,0 +1,44 @@
+# Offline STT setup (faster-whisper)
+
+The local adapter is implemented, but inference remains disabled by default.
+
+## Provision a local model
+
+Install the optional runtime:
+
+```bash
+pip install '.[stt-whisper]'
+```
+
+Provision the selected Whisper checkpoint on an operator-controlled machine, then copy the complete CTranslate2 model directory into the server model volume:
+
+```
+/models/whisper-large-v3/
+```
+
+The directory must contain the CTranslate2 model files and tokenizer assets expected by faster-whisper. Do not set `STT_MODEL_PATH` to a hosted model ID: the adapter accepts a local directory only and does not download weights during requests.
+
+Verify model license, source revision, language coverage and hardware requirements before deployment. Weights are not stored in Git.
+
+## Enable
+
+Set these values in `.env`:
+
+```dotenv
+STT_ADAPTER=faster-whisper
+STT_MODEL_PATH=/models/whisper-large-v3
+STT_DEVICE=cpu
+STT_COMPUTE_TYPE=int8
+```
+
+For NVIDIA GPU deployment, select a compatible CUDA/CTranslate2 stack and configure the device and compute type accordingly. The included Compose profile is CPU-oriented.
+
+## Request
+
+Send multipart form data to `POST /v1/stt` with header `X-AQX-API-Key` and field `file`. Optional `language` accepts a language code; omit it for automatic language detection.
+
+The response includes text, detected language and language probability. Uploaded audio is written to a temporary file and deleted after processing.
+
+## Readiness
+
+A present model directory and installed runtime are necessary but not sufficient. Run representative audio tests for each target language/dialect, record WER/CER and latency in `LANGUAGE-VALIDATION.md`, and only then mark that language verified. No language is verified by this scaffold.
